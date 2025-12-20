@@ -4,13 +4,13 @@ func main() {
 	vm := VM{
 		alu: ALU{},
 		program: []any{
-			"PUSH", 1,
-			"PUSH", 2,
-			"PUSH", 3,
 			"PUSH", 4,
-			"MUL",
-			"MUL",
-			"MUL",
+			// condicion del jump
+			"PUSH", 2,
+			"JUMP_IF_TRUE", 8,
+			"PUSH", 2,
+			"PUSH", 2,
+			"PUSH", 2,
 			"PRINT",
 		},
 	}
