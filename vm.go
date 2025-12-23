@@ -9,6 +9,7 @@ type VM struct {
 	pc      int
 	alu     ALU
 	program []any
+	memory  map[string]int
 }
 
 func (vm *VM) push(value int) {
@@ -123,7 +124,7 @@ func (vm *VM) jump_if_true() {
 	vm.pc += 2
 }
 
-func (vm *VM) EQ() {
+func (vm *VM) eq() {
 	if len(vm.stack) < 2 {
 		panic("not enough operands")
 	}
@@ -133,7 +134,7 @@ func (vm *VM) EQ() {
 	vm.push(vm.alu.Equal(x, y))
 }
 
-func (vm *VM) NEQ() {
+func (vm *VM) neq() {
 	if len(vm.stack) < 2 {
 		panic("not enough operands")
 	}
@@ -143,7 +144,7 @@ func (vm *VM) NEQ() {
 	vm.push(vm.alu.NotEqual(x, y))
 }
 
-func (vm *VM) GT() {
+func (vm *VM) gt() {
 	if len(vm.stack) < 2 {
 		panic("not enough operands")
 	}
@@ -153,7 +154,7 @@ func (vm *VM) GT() {
 	vm.push(vm.alu.GreaterThan(x, y))
 }
 
-func (vm *VM) LT() {
+func (vm *VM) lt() {
 	if len(vm.stack) < 2 {
 		panic("not enough operands")
 	}
@@ -163,7 +164,7 @@ func (vm *VM) LT() {
 	vm.push(vm.alu.LessThan(x, y))
 }
 
-func (vm *VM) GE() {
+func (vm *VM) ge() {
 	if len(vm.stack) < 2 {
 		panic("not enough operands")
 	}
@@ -173,7 +174,7 @@ func (vm *VM) GE() {
 	vm.push(vm.alu.GreaterThanOrEqual(x, y))
 }
 
-func (vm *VM) LE() {
+func (vm *VM) le() {
 	if len(vm.stack) < 2 {
 		panic("not enough operands")
 	}
@@ -181,6 +182,24 @@ func (vm *VM) LE() {
 	x := vm.pop()
 	y := vm.pop()
 	vm.push(vm.alu.LessThanOrEqual(x, y))
+}
+
+func (vm *VM) store(key string) {
+	if len(vm.stack) < 2 {
+		panic("not enough operands")
+	}
+
+	value := vm.pop()
+	vm.memory[key] = value
+}
+
+func (vm *VM) load(key string) {
+	if len(vm.stack) < 1 {
+		panic("not enough operands")
+	}
+
+	value := vm.memory[key]
+	vm.push(value)
 }
 
 func (vm *VM) Run() {
@@ -225,6 +244,38 @@ func (vm *VM) Run() {
 
 			case "JUMP_IF_TRUE":
 				vm.jump_if_true()
+
+			case "EQ":
+				vm.eq()
+				vm.pc++
+
+			case "NEQ":
+				vm.neq()
+				vm.pc++
+
+			case "GT":
+				vm.gt()
+				vm.pc++
+
+			case "LT":
+				vm.lt()
+				vm.pc++
+
+			case "GE":
+				vm.ge()
+				vm.pc++
+
+			case "LE":
+				vm.le()
+				vm.pc++
+
+			case "STORE":
+				vm.store(vm.program[vm.pc+1].(string))
+				vm.pc += 2
+
+			case "LOAD":
+				vm.load(vm.program[vm.pc+1].(string))
+				vm.pc += 2
 
 			default:
 				panic("unknown instruction: " + instr)

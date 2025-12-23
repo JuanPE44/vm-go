@@ -4,15 +4,19 @@ func main() {
 	vm := VM{
 		alu: ALU{},
 		program: []any{
-			"PUSH", 4,
+			"PUSH", 1,
+			"PUSH", 2,
 			// condicion del jump
-			"PUSH", 2,
-			"JUMP_IF_TRUE", 8,
-			"PUSH", 2,
-			"PUSH", 2,
-			"PUSH", 2,
+			"PUSH", 4,
+			"STORE", "x",
+			"PUSH", 3,
+			"PUSH", 5,
+			"PUSH", 6,
+			"PUSH", 7,
+			"LOAD", "x",
 			"PRINT",
 		},
+		memory: make(map[string]int),
 	}
 
 	vm.Run()
