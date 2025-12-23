@@ -5,11 +5,13 @@ import (
 )
 
 type VM struct {
-	stack   []int
-	pc      int
-	alu     ALU
-	program []any
-	memory  map[string]int
+	running   bool
+	stack     []int
+	callStack []int
+	pc        int
+	alu       ALU
+	program   []any
+	memory    map[string]int
 }
 
 func (vm *VM) push(value int) {
@@ -202,8 +204,27 @@ func (vm *VM) load(key string) {
 	vm.push(value)
 }
 
+func (vm *VM) call() {
+	if len(vm.stack) < 2 {
+		panic("not enough operands")
+	}
+
+	address := vm.program[vm.pc+1].(int)
+	vm.callStack = append(vm.callStack, vm.pc+2)
+	vm.pc = address
+}
+
+func (vm *VM) ret() {
+	if len(vm.callStack) == 0 {
+		panic("no function to return from")
+	}
+
+	vm.pc = vm.callStack[len(vm.callStack)-1]
+	vm.callStack = vm.callStack[:len(vm.callStack)-1]
+}
+
 func (vm *VM) Run() {
-	for vm.pc < len(vm.program) {
+	for vm.running && vm.pc < len(vm.program) {
 		switch instr := vm.program[vm.pc].(type) {
 		case string:
 			switch instr {
@@ -276,6 +297,16 @@ func (vm *VM) Run() {
 			case "LOAD":
 				vm.load(vm.program[vm.pc+1].(string))
 				vm.pc += 2
+
+			case "HALT":
+				vm.running = false
+				vm.pc++
+
+			case "CALL":
+				vm.call()
+
+			case "RET":
+				vm.ret()
 
 			default:
 				panic("unknown instruction: " + instr)
