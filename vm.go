@@ -10,8 +10,8 @@ type VM struct {
 	callStack []int
 	pc        int
 	alu       ALU
-	program   []any
-	memory    map[string]int
+	program   []byte
+	memory    map[int]int
 }
 
 func (vm *VM) push(value int) {
@@ -28,7 +28,7 @@ func (vm *VM) pop() int {
 	return value
 }
 
-func (vm *VM) sum() {
+func (vm *VM) add() {
 	if len(vm.stack) < 2 {
 		panic("not enough operands")
 	}
@@ -47,7 +47,7 @@ func (vm *VM) print() {
 
 }
 
-func (vm *VM) res() {
+func (vm *VM) sub() {
 	if len(vm.stack) < 2 {
 		panic("not enough operands")
 	}
@@ -82,12 +82,11 @@ func (vm *VM) jump() {
 		panic("not enough operands")
 	}
 
-	target := vm.program[vm.pc+1].(int)
-	if target < 0 || target >= len(vm.program) {
+	target := vm.program[vm.pc+1]
+	if int(target) >= len(vm.program) {
 		panic("invalid jump target")
 	}
-
-	vm.pc = target
+	vm.pc = int(target)
 }
 
 func (vm *VM) jump_if_false() {
@@ -95,13 +94,13 @@ func (vm *VM) jump_if_false() {
 		panic("not enough operands")
 	}
 	cond := vm.pop()
-	target := vm.program[vm.pc+1].(int)
+	target := vm.program[vm.pc+1]
 
 	if cond == 0 {
-		if target < 0 || target >= len(vm.program) {
+		if int(target) >= len(vm.program) {
 			panic("invalid jump target")
 		}
-		vm.pc = target
+		vm.pc = int(target)
 		return
 	}
 
@@ -113,13 +112,13 @@ func (vm *VM) jump_if_true() {
 		panic("not enough operands")
 	}
 	cond := vm.pop()
-	target := vm.program[vm.pc+1].(int)
+	target := vm.program[vm.pc+1]
 
 	if cond != 0 {
-		if target < 0 || target >= len(vm.program) {
+		if int(target) >= len(vm.program) {
 			panic("invalid jump target")
 		}
-		vm.pc = target
+		vm.pc = int(target)
 		return
 	}
 
@@ -186,8 +185,8 @@ func (vm *VM) le() {
 	vm.push(vm.alu.LessThanOrEqual(x, y))
 }
 
-func (vm *VM) store(key string) {
-	if len(vm.stack) < 2 {
+func (vm *VM) store(key int) {
+	if len(vm.stack) < 1 {
 		panic("not enough operands")
 	}
 
@@ -195,23 +194,19 @@ func (vm *VM) store(key string) {
 	vm.memory[key] = value
 }
 
-func (vm *VM) load(key string) {
-	if len(vm.stack) < 1 {
-		panic("not enough operands")
-	}
-
+func (vm *VM) load(key int) {
 	value := vm.memory[key]
 	vm.push(value)
 }
 
 func (vm *VM) call() {
-	if len(vm.stack) < 2 {
+	if len(vm.stack) < 1 {
 		panic("not enough operands")
 	}
 
-	address := vm.program[vm.pc+1].(int)
+	address := vm.program[vm.pc+1]
 	vm.callStack = append(vm.callStack, vm.pc+2)
-	vm.pc = address
+	vm.pc = int(address)
 }
 
 func (vm *VM) ret() {
@@ -221,98 +216,4 @@ func (vm *VM) ret() {
 
 	vm.pc = vm.callStack[len(vm.callStack)-1]
 	vm.callStack = vm.callStack[:len(vm.callStack)-1]
-}
-
-func (vm *VM) Run() {
-	for vm.running && vm.pc < len(vm.program) {
-		switch instr := vm.program[vm.pc].(type) {
-		case string:
-			switch instr {
-			case "PUSH":
-				value := vm.program[vm.pc+1].(int)
-				vm.push(value)
-				vm.pc += 2
-
-			case "POP":
-				vm.pop()
-				vm.pc++
-
-			case "SUM":
-				vm.sum()
-				vm.pc++
-
-			case "RES":
-				vm.res()
-				vm.pc++
-
-			case "MUL":
-				vm.mul()
-				vm.pc++
-
-			case "DIV":
-				vm.div()
-				vm.pc++
-
-			case "PRINT":
-				vm.print()
-				vm.pc++
-
-			case "JUMP":
-				vm.jump()
-
-			case "JUMP_IF_FALSE":
-				vm.jump_if_false()
-
-			case "JUMP_IF_TRUE":
-				vm.jump_if_true()
-
-			case "EQ":
-				vm.eq()
-				vm.pc++
-
-			case "NEQ":
-				vm.neq()
-				vm.pc++
-
-			case "GT":
-				vm.gt()
-				vm.pc++
-
-			case "LT":
-				vm.lt()
-				vm.pc++
-
-			case "GE":
-				vm.ge()
-				vm.pc++
-
-			case "LE":
-				vm.le()
-				vm.pc++
-
-			case "STORE":
-				vm.store(vm.program[vm.pc+1].(string))
-				vm.pc += 2
-
-			case "LOAD":
-				vm.load(vm.program[vm.pc+1].(string))
-				vm.pc += 2
-
-			case "HALT":
-				vm.running = false
-				vm.pc++
-
-			case "CALL":
-				vm.call()
-
-			case "RET":
-				vm.ret()
-
-			default:
-				panic("unknown instruction: " + instr)
-			}
-		default:
-			panic("expected opcode, got operand")
-		}
-	}
 }
