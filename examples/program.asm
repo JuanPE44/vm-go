@@ -1,0 +1,9 @@
+PUSH 10
+CALL duplicar
+PRINT
+HALT
+
+duplicar:
+PUSH 2
+MUL
+RET
