@@ -1,3 +1,61 @@
+# VM-Go: De Expresiones Matemáticas a Bytecode
+
+Este proyecto es una implementación completa de una **Stack-based Virtual Machine (VM)** y un **Compilador de Expresiones**. El sistema es capaz de tomar una expresión humana como `(10 + 5) * 2`, traducirla a Assembly, luego a Bytecode binario y ejecutarla en un entorno virtual.
+
+## 🏗️ Arquitectura del Proyecto
+
+El proyecto se divide en cuatro capas principales:
+
+1.  **Frontend (Compilador)**: 
+    * **Lexer**: Convierte el texto en tokens (`TokenPlus`, `TokenNumber`, etc.).
+    * **Parser**: Construye un Árbol de Sintaxis Abstracta (AST) respetando la precedencia de operadores.
+2.  **Middleware (Generador de Código)**:
+    * Recorre el AST y genera código Assembly en formato de texto plano.
+3.  **Assembler**:
+    * Realiza dos pasadas sobre el Assembly para resolver etiquetas (labels) y generar el Bytecode final.
+4.  **Backend (Virtual Machine)**:
+    * **Execution Engine**: El corazón que procesa los OpCodes.
+    * **Stack**: Memoria persistente para operaciones aritméticas y flujo de control.
+
+---
+
+## 🚀 Pipeline de Compilación
+
+El flujo de datos sigue este camino:
+
+**Input:** `3 + 5 * 2`
+
+1.  **Lexer** ➔ `[3, +, 5, *, 2]`
+2.  **Parser** ➔ 
+    ```text
+      +
+     / \
+    3   *
+       / \
+      5   2
+    ```
+3.  **CodeGen** ➔ `PUSH 3, PUSH 5, PUSH 2, MUL, ADD`
+4.  **Assembler** ➔ `[0x01, 0x03, 0x01, 0x05, 0x01, 0x02, 0x04, 0x03]` (Bytecode)
+5.  **VM** ➔ **Result: 13**
+
+---
+
+## 📂 Estructura de Directorios
+
+```text
+.
+├── cmd/
+│   └── main.go          # Punto de entrada del programa
+├── pkg/
+│   ├── ast/             # Definición de los nodos del árbol (AST)
+│   ├── compiler/        # Lexer, Parser y Generador de Código
+│   ├── assembler/       # Traductor de Assembly a Bytecode
+│   └── vm/              # Motor de ejecución y lógica de la VM
+├── examples/            # Programas de prueba (.asm)
+└── go.mod               # Definición del módulo de Go
+
+```
+
 # Virtual Machine – Instruction Set (Opcode Table)
 
 **Notation**
