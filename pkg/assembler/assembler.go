@@ -1,8 +1,9 @@
-package main
+package assembler
 
 import (
 	"strconv"
 	"strings"
+	"vm-go/pkg/opcodes"
 )
 
 func CompileASM(source string) []byte {
@@ -10,15 +11,13 @@ func CompileASM(source string) []byte {
 
 	labels := map[string]int{}
 	pc := 0
-
-	// resolve labels
+	// labels
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 
-		// Label
 		if strings.HasSuffix(line, ":") {
 			name := strings.TrimSuffix(line, ":")
 			labels[name] = pc
@@ -61,73 +60,73 @@ func CompileASM(source string) []byte {
 
 		case "PUSH":
 			v, _ := strconv.Atoi(parts[1])
-			bytecode = append(bytecode, OP_PUSH, byte(v))
+			bytecode = append(bytecode, opcodes.OP_PUSH, byte(v))
 
 		case "POP":
-			bytecode = append(bytecode, OP_POP)
+			bytecode = append(bytecode, opcodes.OP_POP)
 
 		case "ADD":
-			bytecode = append(bytecode, OP_ADD)
+			bytecode = append(bytecode, opcodes.OP_ADD)
 
 		case "SUB":
-			bytecode = append(bytecode, OP_SUB)
+			bytecode = append(bytecode, opcodes.OP_SUB)
 
 		case "MUL":
-			bytecode = append(bytecode, OP_MUL)
+			bytecode = append(bytecode, opcodes.OP_MUL)
 
 		case "DIV":
-			bytecode = append(bytecode, OP_DIV)
+			bytecode = append(bytecode, opcodes.OP_DIV)
 
 		case "PRINT":
-			bytecode = append(bytecode, OP_PRINT)
+			bytecode = append(bytecode, opcodes.OP_PRINT)
 
 		case "EQ":
-			bytecode = append(bytecode, OP_EQ)
+			bytecode = append(bytecode, opcodes.OP_EQ)
 
 		case "NEQ":
-			bytecode = append(bytecode, OP_NEQ)
+			bytecode = append(bytecode, opcodes.OP_NEQ)
 
 		case "GT":
-			bytecode = append(bytecode, OP_GT)
+			bytecode = append(bytecode, opcodes.OP_GT)
 
 		case "GE":
-			bytecode = append(bytecode, OP_GE)
+			bytecode = append(bytecode, opcodes.OP_GE)
 
 		case "LT":
-			bytecode = append(bytecode, OP_LT)
+			bytecode = append(bytecode, opcodes.OP_LT)
 
 		case "LE":
-			bytecode = append(bytecode, OP_LE)
+			bytecode = append(bytecode, opcodes.OP_LE)
 
 		case "JUMP":
 			target := labels[parts[1]]
-			bytecode = append(bytecode, OP_JUMP, byte(target))
+			bytecode = append(bytecode, opcodes.OP_JUMP, byte(target))
 
 		case "JUMP_IF_TRUE":
 			target := labels[parts[1]]
-			bytecode = append(bytecode, OP_JUMP_IF_TRUE, byte(target))
+			bytecode = append(bytecode, opcodes.OP_JUMP_IF_TRUE, byte(target))
 
 		case "JUMP_IF_FALSE":
 			target := labels[parts[1]]
-			bytecode = append(bytecode, OP_JUMP_IF_FALSE, byte(target))
+			bytecode = append(bytecode, opcodes.OP_JUMP_IF_FALSE, byte(target))
 
 		case "HALT":
-			bytecode = append(bytecode, OP_HALT)
+			bytecode = append(bytecode, opcodes.OP_HALT)
 
 		case "LOAD":
 			slot, _ := strconv.Atoi(parts[1])
-			bytecode = append(bytecode, OP_LOAD, byte(slot))
+			bytecode = append(bytecode, opcodes.OP_LOAD, byte(slot))
 
 		case "STORE":
 			slot, _ := strconv.Atoi(parts[1])
-			bytecode = append(bytecode, OP_STORE, byte(slot))
+			bytecode = append(bytecode, opcodes.OP_STORE, byte(slot))
 
 		case "CALL":
 			target := labels[parts[1]]
-			bytecode = append(bytecode, OP_CALL, byte(target))
+			bytecode = append(bytecode, opcodes.OP_CALL, byte(target))
 
 		case "RET":
-			bytecode = append(bytecode, OP_RET)
+			bytecode = append(bytecode, opcodes.OP_RET)
 
 		default:
 			panic("unknown instruction: " + op)

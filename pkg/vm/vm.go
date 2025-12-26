@@ -1,4 +1,4 @@
-package main
+package vm
 
 import (
 	"fmt"
@@ -12,6 +12,14 @@ type VM struct {
 	alu       ALU
 	program   []byte
 	memory    map[int]int
+}
+
+func NewVM(program []byte) *VM {
+	return &VM{
+		alu:     ALU{},
+		program: program,
+		memory:  make(map[int]int),
+	}
 }
 
 func (vm *VM) push(value int) {
