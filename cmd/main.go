@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strings"
 	"vm-go/pkg/assembler"
 	"vm-go/pkg/ast"
-	"vm-go/pkg/compiler"
 	"vm-go/pkg/vm"
 )
 
@@ -40,16 +41,21 @@ func generate(node ast.Node, sb *strings.Builder) {
 }
 
 func main() {
-	input := "2 * (2 + 3)"
+	//input := "2 * (2 + 3 + 4 + 5 + 20)"
 
-	l := compiler.NewLexer(input)
+	//l := compiler.NewLexer(input)
+	//p := compiler.NewParser(l)
+	//ast := p.ParseExpression()
 
-	p := compiler.NewParser(l)
-	ast := p.ParseExpression()
+	//programASM := CompileASTtoASM(ast)
+	//fmt.Println("--- Assembly Generado ---")
+	//fmt.Println(programASM)
+	data, err := os.ReadFile("examples/program.asm")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	programASM := CompileASTtoASM(ast)
-	fmt.Println("--- Assembly Generado ---")
-	fmt.Println(programASM)
+	programASM := string(data)
 
 	bytecode := assembler.CompileASM(programASM)
 

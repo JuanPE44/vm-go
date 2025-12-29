@@ -1,9 +1,25 @@
-PUSH 10
-CALL duplicar
+PUSH 100
+STORE 0
+
+PUSH 2
+CALL test
+LOAD 0
 PRINT
 HALT
 
-duplicar:
-PUSH 2
-MUL
+test:
+STORE 1
+PUSH 10
+STORE 0
+
+LOAD 1
+PRINT
+
+LOAD 1
+PUSH 1
+SUB
+JUMP_IF_FALSE end
+
+CALL test
+end:
 RET
