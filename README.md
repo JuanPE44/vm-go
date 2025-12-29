@@ -19,11 +19,9 @@ El proyecto se divide en cuatro capas principales:
 
 ---
 
-## Pipeline de Compilación
+## Flujo de datos
 
-El flujo de datos sigue este camino:
-
-<img width="1627" height="611" alt="image" src="https://github.com/user-attachments/assets/7430c6e2-9111-4848-b84e-63e227ec0020" />
+<img width="1451" height="503" alt="image" src="https://github.com/user-attachments/assets/2511a9fc-5570-4b5c-9d48-66cc04cd8adb" />
 
 ---
 
