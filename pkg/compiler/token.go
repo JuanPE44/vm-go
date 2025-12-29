@@ -15,5 +15,5 @@ const (
 
 type Token struct {
 	Type    TokenType
-	Literal string // El texto original (ej: "123")
+	Literal string
 }
