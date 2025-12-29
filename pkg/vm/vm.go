@@ -4,6 +4,10 @@ import (
 	"fmt"
 )
 
+type Scope struct {
+	vars map[int]int
+}
+
 type VM struct {
 	running   bool
 	stack     []int
@@ -11,15 +15,21 @@ type VM struct {
 	pc        int
 	alu       ALU
 	program   []byte
-	memory    map[int]int
+	scopes    []*Scope
 }
 
 func NewVM(program []byte) *VM {
 	return &VM{
 		alu:     ALU{},
 		program: program,
-		memory:  make(map[int]int),
+		scopes: []*Scope{
+			{vars: make(map[int]int)},
+		},
 	}
+}
+
+func (vm *VM) currentScope() *Scope {
+	return vm.scopes[len(vm.scopes)-1]
 }
 
 func (vm *VM) push(value int) {
@@ -46,13 +56,19 @@ func (vm *VM) add() {
 	vm.push(vm.alu.Sum(x, y))
 }
 
-func (vm *VM) print() {
+func (vm *VM) dump() {
 	cont := vm.stack
 	for len(cont) > 0 {
 		fmt.Println(cont[len(cont)-1])
 		cont = cont[:len(cont)-1]
 	}
+}
 
+func (vm *VM) print() {
+	if len(vm.stack) == 0 {
+		panic("empty stack")
+	}
+	fmt.Println(vm.stack[len(vm.stack)-1])
 }
 
 func (vm *VM) sub() {
@@ -199,21 +215,28 @@ func (vm *VM) store(key int) {
 	}
 
 	value := vm.pop()
-	vm.memory[key] = value
+	vm.currentScope().vars[key] = value
 }
 
 func (vm *VM) load(key int) {
-	value := vm.memory[key]
-	vm.push(value)
+	for i := len(vm.scopes) - 1; i >= 0; i-- {
+		if v, ok := vm.scopes[i].vars[key]; ok {
+			vm.push(v)
+			return
+		}
+	}
+	panic("variable not found")
 }
 
 func (vm *VM) call() {
-	if len(vm.stack) < 1 {
-		panic("not enough operands")
-	}
-
 	address := vm.program[vm.pc+1]
 	vm.callStack = append(vm.callStack, vm.pc+2)
+
+	// crear nuevo scope
+	vm.scopes = append(vm.scopes, &Scope{
+		vars: make(map[int]int),
+	})
+
 	vm.pc = int(address)
 }
 
@@ -224,4 +247,7 @@ func (vm *VM) ret() {
 
 	vm.pc = vm.callStack[len(vm.callStack)-1]
 	vm.callStack = vm.callStack[:len(vm.callStack)-1]
+
+	// destruir scope
+	vm.scopes = vm.scopes[:len(vm.scopes)-1]
 }
