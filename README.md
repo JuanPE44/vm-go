@@ -2,7 +2,7 @@
 
 Este proyecto es una implementación completa de una **Stack-based Virtual Machine (VM)** y un **Compilador de Expresiones**. El sistema es capaz de tomar una expresión humana como `(10 + 5) * 2`, traducirla a Assembly, luego a Bytecode binario y ejecutarla en un entorno virtual.
 
-## 🏗️ Arquitectura del Proyecto
+## Arquitectura del Proyecto
 
 El proyecto se divide en cuatro capas principales:
 
@@ -19,28 +19,15 @@ El proyecto se divide en cuatro capas principales:
 
 ---
 
-## 🚀 Pipeline de Compilación
+## Pipeline de Compilación
 
 El flujo de datos sigue este camino:
 
-**Input:** `3 + 5 * 2`
-
-1.  **Lexer** ➔ `[3, +, 5, *, 2]`
-2.  **Parser** ➔ 
-    ```text
-      +
-     / \
-    3   *
-       / \
-      5   2
-    ```
-3.  **CodeGen** ➔ `PUSH 3, PUSH 5, PUSH 2, MUL, ADD`
-4.  **Assembler** ➔ `[0x01, 0x03, 0x01, 0x05, 0x01, 0x02, 0x04, 0x03]` (Bytecode)
-5.  **VM** ➔ **Result: 13**
+<img width="1627" height="611" alt="image" src="https://github.com/user-attachments/assets/7430c6e2-9111-4848-b84e-63e227ec0020" />
 
 ---
 
-## 📂 Estructura de Directorios
+## Estructura de Directorios
 
 ```text
 .
