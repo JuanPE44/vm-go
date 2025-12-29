@@ -19,7 +19,7 @@ El proyecto se divide en cuatro capas principales:
 
 ---
 
-## Flujo de datos
+## Pipeline de Compilación
 
 <img width="1451" height="503" alt="image" src="https://github.com/user-attachments/assets/2511a9fc-5570-4b5c-9d48-66cc04cd8adb" />
 
@@ -59,7 +59,8 @@ El proyecto se divide en cuatro capas principales:
 | `OP_SUB` | `[int] [int]` | `[int]` | Pop two values, push subtraction |
 | `OP_MUL` | `[int] [int]` | `[int]` | Pop two values, push multiplication |
 | `OP_DIV` | `[int] [int]` | `[int]` | Pop two values, push division |
-| `OP_PRINT` | `[int]` | — | Print top of stack (or full stack, VM-defined) |
+| `OP_PRINT` | — | — | Print top of stack |
+| `OP_DUMP` | — | — | Print  full stack, VM-defined |
 
 ---
 
