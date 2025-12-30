@@ -61,7 +61,7 @@ El proyecto se divide en cuatro capas principales:
 | `OP_DIV` | `[int] [int]` | `[int]` | Pop two values, push division |
 | `OP_PRINT` | — | — | Print top of stack |
 | `OP_DUMP` | — | — | Print  full stack, VM-defined |
-
+| `OP_DUP` |  `[int]` |  `[int] [int]` | Duplicate top value on stack |
 ---
 
 ## Comparisons (Boolean result: `0 = false`, `1 = true`)
