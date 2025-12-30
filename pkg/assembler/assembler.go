@@ -6,6 +6,22 @@ import (
 	"vm-go/pkg/opcodes"
 )
 
+func instrSize(op string) int {
+	switch op {
+	case "PUSH", "LOAD", "STORE",
+		"JUMP", "JUMP_IF_TRUE", "JUMP_IF_FALSE", "CALL":
+		return 2
+
+	case "POP", "ADD", "SUB", "MUL", "DIV",
+		"EQ", "NEQ", "GT", "GE", "LT", "LE",
+		"PRINT", "RET", "HALT", "DUP", "DUMP":
+		return 1
+
+	default:
+		panic("unknown instruction: " + op)
+	}
+}
+
 func CompileASM(source string) []byte {
 	lines := strings.Split(source, "\n")
 
@@ -27,21 +43,7 @@ func CompileASM(source string) []byte {
 		parts := strings.Fields(line)
 		op := parts[0]
 
-		switch op {
-		case "PUSH", "LOAD", "STORE":
-			pc += 2
-
-		case "JUMP", "JUMP_IF_TRUE", "JUMP_IF_FALSE", "CALL":
-			pc += 2
-
-		case "POP", "ADD", "SUB", "MUL", "DIV",
-			"EQ", "NEQ", "GT", "GE", "LT", "LE",
-			"PRINT", "RET", "HALT":
-			pc += 1
-
-		default:
-			panic("unknown instruction: " + op)
-		}
+		pc += instrSize(op)
 	}
 
 	// emit bytecode
@@ -79,6 +81,12 @@ func CompileASM(source string) []byte {
 
 		case "PRINT":
 			bytecode = append(bytecode, opcodes.OP_PRINT)
+
+		case "DUMP":
+			bytecode = append(bytecode, opcodes.OP_DUMP)
+
+		case "DUP":
+			bytecode = append(bytecode, opcodes.OP_DUP)
 
 		case "EQ":
 			bytecode = append(bytecode, opcodes.OP_EQ)
