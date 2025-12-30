@@ -22,7 +22,7 @@ func (ee *ExecutionEngine) Execute(vm *VM) {
 			vm.push(int(value))
 			vm.pc += 2
 
-		case opcodes.OP_ADD, opcodes.OP_SUB, opcodes.OP_MUL, opcodes.OP_DIV, opcodes.OP_POP, opcodes.OP_PRINT, opcodes.OP_EQ, opcodes.OP_NEQ, opcodes.OP_GT, opcodes.OP_LT, opcodes.OP_GE, opcodes.OP_LE:
+		case opcodes.OP_ADD, opcodes.OP_SUB, opcodes.OP_MUL, opcodes.OP_DIV, opcodes.OP_POP, opcodes.OP_PRINT, opcodes.OP_EQ, opcodes.OP_NEQ, opcodes.OP_GT, opcodes.OP_LT, opcodes.OP_GE, opcodes.OP_LE, opcodes.OP_DUMP, opcodes.OP_DUP:
 			switch instr {
 			case opcodes.OP_ADD:
 				vm.add()
@@ -36,6 +36,10 @@ func (ee *ExecutionEngine) Execute(vm *VM) {
 				vm.pop()
 			case opcodes.OP_PRINT:
 				vm.print()
+			case opcodes.OP_DUMP:
+				vm.dump()
+			case opcodes.OP_DUP:
+				vm.dup()
 			case opcodes.OP_EQ:
 				vm.eq()
 			case opcodes.OP_NEQ:

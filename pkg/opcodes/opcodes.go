@@ -23,4 +23,6 @@ const (
 	OP_CALL
 	OP_RET
 	OP_HALT
+	OP_DUP
+	OP_DUMP
 )

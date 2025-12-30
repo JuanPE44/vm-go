@@ -8,14 +8,19 @@ type Scope struct {
 	vars map[int]int
 }
 
+type Frame struct {
+	returnPC  int
+	stackBase int
+}
+
 type VM struct {
-	running   bool
-	stack     []int
-	callStack []int
-	pc        int
-	alu       ALU
-	program   []byte
-	scopes    []*Scope
+	running bool
+	stack   []int
+	frames  []Frame
+	pc      int
+	alu     ALU
+	program []byte
+	scopes  []*Scope
 }
 
 func NewVM(program []byte) *VM {
@@ -102,9 +107,6 @@ func (vm *VM) div() {
 }
 
 func (vm *VM) jump() {
-	if len(vm.stack) < 1 {
-		panic("not enough operands")
-	}
 
 	target := vm.program[vm.pc+1]
 	if int(target) >= len(vm.program) {
@@ -148,15 +150,14 @@ func (vm *VM) jump_if_true() {
 
 	vm.pc += 2
 }
-
 func (vm *VM) eq() {
 	if len(vm.stack) < 2 {
 		panic("not enough operands")
 	}
 
-	x := vm.pop()
-	y := vm.pop()
-	vm.push(vm.alu.Equal(x, y))
+	right := vm.pop()
+	left := vm.pop()
+	vm.push(vm.alu.Equal(left, right))
 }
 
 func (vm *VM) neq() {
@@ -164,9 +165,9 @@ func (vm *VM) neq() {
 		panic("not enough operands")
 	}
 
-	x := vm.pop()
-	y := vm.pop()
-	vm.push(vm.alu.NotEqual(x, y))
+	right := vm.pop()
+	left := vm.pop()
+	vm.push(vm.alu.NotEqual(left, right))
 }
 
 func (vm *VM) gt() {
@@ -174,9 +175,9 @@ func (vm *VM) gt() {
 		panic("not enough operands")
 	}
 
-	x := vm.pop()
-	y := vm.pop()
-	vm.push(vm.alu.GreaterThan(x, y))
+	right := vm.pop()
+	left := vm.pop()
+	vm.push(vm.alu.GreaterThan(left, right))
 }
 
 func (vm *VM) lt() {
@@ -184,9 +185,9 @@ func (vm *VM) lt() {
 		panic("not enough operands")
 	}
 
-	x := vm.pop()
-	y := vm.pop()
-	vm.push(vm.alu.LessThan(x, y))
+	right := vm.pop()
+	left := vm.pop()
+	vm.push(vm.alu.LessThan(left, right))
 }
 
 func (vm *VM) ge() {
@@ -194,9 +195,9 @@ func (vm *VM) ge() {
 		panic("not enough operands")
 	}
 
-	x := vm.pop()
-	y := vm.pop()
-	vm.push(vm.alu.GreaterThanOrEqual(x, y))
+	right := vm.pop()
+	left := vm.pop()
+	vm.push(vm.alu.GreaterThanOrEqual(left, right))
 }
 
 func (vm *VM) le() {
@@ -204,9 +205,9 @@ func (vm *VM) le() {
 		panic("not enough operands")
 	}
 
-	x := vm.pop()
-	y := vm.pop()
-	vm.push(vm.alu.LessThanOrEqual(x, y))
+	right := vm.pop()
+	left := vm.pop()
+	vm.push(vm.alu.LessThanOrEqual(left, right))
 }
 
 func (vm *VM) store(key int) {
@@ -230,8 +231,11 @@ func (vm *VM) load(key int) {
 
 func (vm *VM) call() {
 	address := vm.program[vm.pc+1]
-	vm.callStack = append(vm.callStack, vm.pc+2)
 
+	vm.frames = append(vm.frames, Frame{
+		returnPC:  vm.pc + 2,
+		stackBase: len(vm.stack),
+	})
 	// crear nuevo scope
 	vm.scopes = append(vm.scopes, &Scope{
 		vars: make(map[int]int),
@@ -241,13 +245,23 @@ func (vm *VM) call() {
 }
 
 func (vm *VM) ret() {
-	if len(vm.callStack) == 0 {
+	if len(vm.frames) == 0 {
 		panic("no function to return from")
 	}
 
-	vm.pc = vm.callStack[len(vm.callStack)-1]
-	vm.callStack = vm.callStack[:len(vm.callStack)-1]
+	frame := vm.frames[len(vm.frames)-1]
+	vm.frames = vm.frames[:len(vm.frames)-1]
 
+	vm.stack = vm.stack[:frame.stackBase]
+	vm.pc = frame.returnPC
 	// destruir scope
 	vm.scopes = vm.scopes[:len(vm.scopes)-1]
+}
+
+func (vm *VM) dup() {
+	if len(vm.stack) < 1 {
+		panic("stack underflow")
+	}
+	v := vm.stack[len(vm.stack)-1]
+	vm.stack = append(vm.stack, v)
 }
