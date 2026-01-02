@@ -1,6 +1,6 @@
-# VM-Go: De Expresiones Matemáticas a Bytecode
+# VM-Go: De Expresiones Matemáticas a Bytecode con Gráficos
 
-Este proyecto es una implementación completa de una **Stack-based Virtual Machine (VM)** y un **Compilador de Expresiones**. El sistema es capaz de tomar una expresión humana como `(10 + 5) * 2`, traducirla a Assembly, luego a Bytecode binario y ejecutarla en un entorno virtual.
+Este proyecto es una implementación completa de una **Stack-based Virtual Machine (VM)** y un **Compilador de Expresiones**. El sistema es capaz de tomar una expresión humana como `(10 + 5) * 2`, traducirla a Assembly, luego a Bytecode binario y ejecutarla en un entorno virtual. Además, incluye un **sistema de gráficos basado en canvas** que permite dibujar píxeles en una terminal de caracteres.
 
 ## Arquitectura del Proyecto
 
@@ -16,6 +16,7 @@ El proyecto se divide en cuatro capas principales:
 4.  **Backend (Virtual Machine)**:
     * **Execution Engine**: El corazón que procesa los OpCodes.
     * **Stack**: Memoria persistente para operaciones aritméticas y flujo de control.
+    * **Canvas**: Sistema de gráficos para renderizado en terminal.
 
 ---
 
@@ -35,6 +36,7 @@ El proyecto se divide en cuatro capas principales:
 │   ├── ast/             # Definición de los nodos del árbol (AST)
 │   ├── compiler/        # Lexer, Parser y Generador de Código
 │   ├── assembler/       # Traductor de Assembly a Bytecode
+│   ├── canvas/          # Sistema de gráficos basado en caracteres
 │   └── vm/              # Motor de ejecución y lógica de la VM
 ├── examples/            # Programas de prueba (.asm)
 └── go.mod               # Definición del módulo de Go
@@ -53,15 +55,16 @@ El proyecto se divide en cuatro capas principales:
 
 | Opcode | Stack Before | Stack After | Description |
 |------|-------------|-------------|-------------|
-| `OP_PUSH <int>` | — | `[int]` | Push immediate integer onto the stack |
-| `OP_POP` | `[int]` | — | Remove top value from stack |
+| `OP_PUSH_INT <int>` | — | `[int]` | Push immediate integer onto the stack |
+| `OP_PUSH_STR <str>` | — | `[str]` | Push immediate string onto the stack |
+| `OP_POP` | `[value]` | — | Remove top value from stack |
 | `OP_ADD` | `[int] [int]` | `[int]` | Pop two values, push sum |
 | `OP_SUB` | `[int] [int]` | `[int]` | Pop two values, push subtraction |
 | `OP_MUL` | `[int] [int]` | `[int]` | Pop two values, push multiplication |
 | `OP_DIV` | `[int] [int]` | `[int]` | Pop two values, push division |
 | `OP_PRINT` | — | — | Print top of stack |
-| `OP_DUMP` | — | — | Print  full stack, VM-defined |
-| `OP_DUP` |  `[int]` |  `[int] [int]` | Duplicate top value on stack |
+| `OP_DUMP` | — | — | Print full stack (top to bottom) |
+| `OP_DUP` |  `[value]` |  `[value] [value]` | Duplicate top value on stack |
 ---
 
 ## Comparisons (Boolean result: `0 = false`, `1 = true`)
@@ -106,9 +109,26 @@ El proyecto se divide en cuatro capas principales:
 
 ---
 
+## Graphics / Canvas System
+
+| Opcode | Stack Before | Stack After | Description |
+|------|-------------|-------------|-------------|
+| `OP_SYS_DRAW_PIXEL` | `[x:int] [y:int]` | — | Draw a pixel at position (x, y) on the canvas |
+| `OP_SYS_PRESENT` | — | — | Render the canvas to the terminal |
+
+**Canvas Details:**
+- Default size: 20×10 characters
+- Uses `#` for drawn pixels and `.` for empty space
+- Coordinates are 0-indexed: x ∈ [0, width), y ∈ [0, height)
+- Out-of-bounds pixels are silently ignored
+- `OP_SYS_PRESENT` clears the terminal and displays the current canvas state
+
+---
+
 ## Notes
 
 - All control-flow instructions modify the program counter (`PC`) directly.
 - Boolean values are represented as integers: `0 = false`, `1 = true`.
 - Stack underflow or invalid jumps should raise VM errors.
 - Function code is placed outside the main execution flow and reached only via `OP_CALL`.
+- **Known Issue**: There is a duplicate opcode `OP_QT` in the source code (opcodes.go:17) that should be removed. It appears to be a typo for `OP_GT` which is already defined correctly.
