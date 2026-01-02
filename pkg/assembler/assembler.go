@@ -14,7 +14,7 @@ func instrSize(op string) int {
 
 	case "POP", "ADD", "SUB", "MUL", "DIV",
 		"EQ", "NEQ", "GT", "GE", "LT", "LE",
-		"PRINT", "RET", "HALT", "DUP", "DUMP":
+		"PRINT", "RET", "HALT", "DUP", "DUMP", "SYS_DRAW_PIXEL", "SYS_PRESENT":
 		return 1
 
 	default:
@@ -62,7 +62,7 @@ func CompileASM(source string) []byte {
 
 		case "PUSH":
 			v, _ := strconv.Atoi(parts[1])
-			bytecode = append(bytecode, opcodes.OP_PUSH, byte(v))
+			bytecode = append(bytecode, opcodes.OP_PUSH_INT, byte(v))
 
 		case "POP":
 			bytecode = append(bytecode, opcodes.OP_POP)
@@ -135,6 +135,12 @@ func CompileASM(source string) []byte {
 
 		case "RET":
 			bytecode = append(bytecode, opcodes.OP_RET)
+
+		case "SYS_DRAW_PIXEL":
+			bytecode = append(bytecode, opcodes.OP_SYS_DRAW_PIXEL)
+
+		case "SYS_PRESENT":
+			bytecode = append(bytecode, opcodes.OP_SYS_PRESENT)
 
 		default:
 			panic("unknown instruction: " + op)

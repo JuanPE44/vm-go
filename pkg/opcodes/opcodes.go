@@ -1,7 +1,8 @@
 package opcodes
 
 const (
-	OP_PUSH byte = iota
+	OP_PUSH_INT byte = iota
+	OP_PUSH_STR
 	OP_POP
 	OP_ADD
 	OP_SUB
@@ -25,4 +26,6 @@ const (
 	OP_HALT
 	OP_DUP
 	OP_DUMP
+	OP_SYS_DRAW_PIXEL
+	OP_SYS_PRESENT
 )
