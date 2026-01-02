@@ -17,12 +17,15 @@ func (ee *ExecutionEngine) Execute(vm *VM) {
 	for vm.running && vm.pc < len(vm.program) {
 		instr := vm.program[vm.pc]
 		switch instr {
-		case opcodes.OP_PUSH:
+		case opcodes.OP_PUSH_INT:
 			value := vm.program[vm.pc+1]
-			vm.push(int(value))
+			vm.push(Value{
+				Type: VAL_INT,
+				Int:  int(value),
+			})
 			vm.pc += 2
 
-		case opcodes.OP_ADD, opcodes.OP_SUB, opcodes.OP_MUL, opcodes.OP_DIV, opcodes.OP_POP, opcodes.OP_PRINT, opcodes.OP_EQ, opcodes.OP_NEQ, opcodes.OP_GT, opcodes.OP_LT, opcodes.OP_GE, opcodes.OP_LE, opcodes.OP_DUMP, opcodes.OP_DUP:
+		case opcodes.OP_ADD, opcodes.OP_SUB, opcodes.OP_MUL, opcodes.OP_DIV, opcodes.OP_POP, opcodes.OP_PRINT, opcodes.OP_EQ, opcodes.OP_NEQ, opcodes.OP_GT, opcodes.OP_LT, opcodes.OP_GE, opcodes.OP_LE, opcodes.OP_DUMP, opcodes.OP_DUP, opcodes.OP_SYS_DRAW_PIXEL, opcodes.OP_SYS_PRESENT:
 			switch instr {
 			case opcodes.OP_ADD:
 				vm.add()
@@ -52,6 +55,10 @@ func (ee *ExecutionEngine) Execute(vm *VM) {
 				vm.ge()
 			case opcodes.OP_LE:
 				vm.le()
+			case opcodes.OP_SYS_DRAW_PIXEL:
+				vm.sysDrawPixel()
+			case opcodes.OP_SYS_PRESENT:
+				vm.sysPresent()
 			}
 			vm.pc++
 

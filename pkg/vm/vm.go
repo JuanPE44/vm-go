@@ -2,25 +2,49 @@ package vm
 
 import (
 	"fmt"
+	"vm-go/pkg/canvas"
 )
 
+type ValueType int
+
+const (
+	IntType ValueType = iota
+	BoolType
+	RefType // heap
+)
+
+const (
+	VAL_INT ValueType = iota
+	VAL_BOOL
+	VAL_STRING
+	VAL_NULL
+)
+
+type Value struct {
+	Type ValueType
+	Int  int
+	Bool bool
+	Ref  int
+}
+
 type Scope struct {
-	vars map[int]int
+	vars map[int]Value
 }
 
 type Frame struct {
-	returnPC  int
-	stackBase int
+	returnPC int
+	locals   []Value
+	stack    []Value
 }
 
 type VM struct {
-	running bool
-	stack   []int
-	frames  []Frame
-	pc      int
-	alu     ALU
-	program []byte
-	scopes  []*Scope
+	running   bool
+	callStack []Frame
+	pc        int
+	alu       ALU
+	program   []byte
+	scopes    []*Scope
+	canvas    *canvas.Canvas
 }
 
 func NewVM(program []byte) *VM {
@@ -28,8 +52,16 @@ func NewVM(program []byte) *VM {
 		alu:     ALU{},
 		program: program,
 		scopes: []*Scope{
-			{vars: make(map[int]int)},
+			{vars: make(map[int]Value)},
 		},
+		callStack: []Frame{
+			{
+				returnPC: -1,
+				locals:   make([]Value, 0),
+				stack:    make([]Value, 0),
+			},
+		},
+		canvas: canvas.NewCanvas(20, 10),
 	}
 }
 
@@ -37,77 +69,91 @@ func (vm *VM) currentScope() *Scope {
 	return vm.scopes[len(vm.scopes)-1]
 }
 
-func (vm *VM) push(value int) {
-	vm.stack = append(vm.stack, value)
+func (vm *VM) currentFrame() *Frame {
+	return &vm.callStack[len(vm.callStack)-1]
 }
 
-func (vm *VM) pop() int {
-	if len(vm.stack) == 0 {
+func (vm *VM) push(value Value) {
+	frame := vm.currentFrame()
+	frame.stack = append(frame.stack, value)
+}
+
+func (vm *VM) pop() Value {
+	frame := vm.currentFrame()
+	if len(frame.stack) == 0 {
 		panic("stack underflow")
 	}
 
-	value := vm.stack[len(vm.stack)-1]
-	vm.stack = vm.stack[:len(vm.stack)-1]
+	value := frame.stack[len(frame.stack)-1]
+	frame.stack = frame.stack[:len(frame.stack)-1]
 	return value
 }
 
 func (vm *VM) add() {
-	if len(vm.stack) < 2 {
+	frame := vm.currentFrame()
+	if len(frame.stack) < 2 {
 		panic("not enough operands")
 	}
 
-	x := vm.pop()
-	y := vm.pop()
-	vm.push(vm.alu.Sum(x, y))
-}
+	b := vm.pop()
+	a := vm.pop()
 
-func (vm *VM) dump() {
-	cont := vm.stack
-	for len(cont) > 0 {
-		fmt.Println(cont[len(cont)-1])
-		cont = cont[:len(cont)-1]
+	if a.Type != IntType || b.Type != IntType {
+		panic("type error: ADD expects int + int")
 	}
-}
 
-func (vm *VM) print() {
-	if len(vm.stack) == 0 {
-		panic("empty stack")
-	}
-	fmt.Println(vm.stack[len(vm.stack)-1])
+	vm.push(vm.alu.Add(a, b))
 }
 
 func (vm *VM) sub() {
-	if len(vm.stack) < 2 {
+	frame := vm.currentFrame()
+	if len(frame.stack) < 2 {
 		panic("not enough operands")
 	}
 
-	x := vm.pop()
-	y := vm.pop()
-	vm.push(vm.alu.Res(x, y))
+	b := vm.pop()
+	a := vm.pop()
+
+	if a.Type != IntType || b.Type != IntType {
+		panic("type error: SUB expects int - int")
+	}
+
+	vm.push(vm.alu.Sub(a, b))
 }
 
 func (vm *VM) mul() {
-	if len(vm.stack) < 2 {
+	frame := vm.currentFrame()
+	if len(frame.stack) < 2 {
 		panic("not enough operands")
 	}
 
-	x := vm.pop()
-	y := vm.pop()
-	vm.push(vm.alu.Mul(x, y))
+	b := vm.pop()
+	a := vm.pop()
+
+	if a.Type != IntType || b.Type != IntType {
+		panic("type error: MUL expects int * int")
+	}
+
+	vm.push(vm.alu.Mul(a, b))
 }
 
 func (vm *VM) div() {
-	if len(vm.stack) < 2 {
+	frame := vm.currentFrame()
+	if len(frame.stack) < 2 {
 		panic("not enough operands")
 	}
 
-	x := vm.pop()
-	y := vm.pop()
-	vm.push(vm.alu.Div(x, y))
+	b := vm.pop()
+	a := vm.pop()
+
+	if a.Type != IntType || b.Type != IntType {
+		panic("type error: DIV expects int / int")
+	}
+
+	vm.push(vm.alu.Div(a, b))
 }
 
 func (vm *VM) jump() {
-
 	target := vm.program[vm.pc+1]
 	if int(target) >= len(vm.program) {
 		panic("invalid jump target")
@@ -116,13 +162,20 @@ func (vm *VM) jump() {
 }
 
 func (vm *VM) jump_if_false() {
-	if len(vm.stack) < 1 {
+	cond := vm.pop()
+
+	if cond.Type != BoolType {
+		panic("type error: JUMP_IF_FALSE expects bool")
+	}
+
+	frame := vm.currentFrame()
+
+	if len(frame.stack) < 1 {
 		panic("not enough operands")
 	}
-	cond := vm.pop()
 	target := vm.program[vm.pc+1]
 
-	if cond == 0 {
+	if !cond.Bool {
 		if int(target) >= len(vm.program) {
 			panic("invalid jump target")
 		}
@@ -134,13 +187,19 @@ func (vm *VM) jump_if_false() {
 }
 
 func (vm *VM) jump_if_true() {
-	if len(vm.stack) < 1 {
+	cond := vm.pop()
+	if cond.Type != BoolType {
+		panic("type error: JUMP_IF_TRUE expects bool")
+	}
+
+	frame := vm.currentFrame()
+
+	if len(frame.stack) < 1 {
 		panic("not enough operands")
 	}
-	cond := vm.pop()
 	target := vm.program[vm.pc+1]
 
-	if cond != 0 {
+	if cond.Bool {
 		if int(target) >= len(vm.program) {
 			panic("invalid jump target")
 		}
@@ -150,68 +209,107 @@ func (vm *VM) jump_if_true() {
 
 	vm.pc += 2
 }
+
 func (vm *VM) eq() {
-	if len(vm.stack) < 2 {
+
+	frame := vm.currentFrame()
+	if len(frame.stack) < 2 {
 		panic("not enough operands")
 	}
 
-	right := vm.pop()
-	left := vm.pop()
-	vm.push(vm.alu.Equal(left, right))
+	b := vm.pop()
+	a := vm.pop()
+
+	if a.Type != IntType || b.Type != IntType {
+		panic("type error: EQ expects int + int")
+	}
+
+	vm.push(vm.alu.Equal(a, b))
 }
 
 func (vm *VM) neq() {
-	if len(vm.stack) < 2 {
+	frame := vm.currentFrame()
+	if len(frame.stack) < 2 {
 		panic("not enough operands")
 	}
 
-	right := vm.pop()
-	left := vm.pop()
-	vm.push(vm.alu.NotEqual(left, right))
+	b := vm.pop()
+	a := vm.pop()
+
+	if a.Type != IntType || b.Type != IntType {
+		panic("type error: NEQ expects int + int")
+	}
+
+	vm.push(vm.alu.NotEqual(a, b))
 }
 
 func (vm *VM) gt() {
-	if len(vm.stack) < 2 {
+	frame := vm.currentFrame()
+	if len(frame.stack) < 2 {
 		panic("not enough operands")
 	}
 
-	right := vm.pop()
-	left := vm.pop()
-	vm.push(vm.alu.GreaterThan(left, right))
+	b := vm.pop()
+	a := vm.pop()
+
+	if a.Type != IntType || b.Type != IntType {
+		panic("type error: GT expects int + int")
+	}
+
+	vm.push(vm.alu.GreaterThan(a, b))
 }
 
 func (vm *VM) lt() {
-	if len(vm.stack) < 2 {
+	frame := vm.currentFrame()
+	if len(frame.stack) < 2 {
 		panic("not enough operands")
 	}
 
-	right := vm.pop()
-	left := vm.pop()
-	vm.push(vm.alu.LessThan(left, right))
+	b := vm.pop()
+	a := vm.pop()
+
+	if a.Type != IntType || b.Type != IntType {
+		panic("type error: LT expects int + int")
+	}
+
+	vm.push(vm.alu.LessThan(a, b))
 }
 
 func (vm *VM) ge() {
-	if len(vm.stack) < 2 {
+	frame := vm.currentFrame()
+	if len(frame.stack) < 2 {
 		panic("not enough operands")
 	}
 
-	right := vm.pop()
-	left := vm.pop()
-	vm.push(vm.alu.GreaterThanOrEqual(left, right))
+	b := vm.pop()
+	a := vm.pop()
+
+	if a.Type != IntType || b.Type != IntType {
+		panic("type error: GE expects int + int")
+	}
+
+	vm.push(vm.alu.GreaterThanOrEqual(a, b))
 }
 
 func (vm *VM) le() {
-	if len(vm.stack) < 2 {
+	frame := vm.currentFrame()
+	if len(frame.stack) < 2 {
 		panic("not enough operands")
 	}
 
-	right := vm.pop()
-	left := vm.pop()
-	vm.push(vm.alu.LessThanOrEqual(left, right))
+	b := vm.pop()
+	a := vm.pop()
+
+	if a.Type != IntType || b.Type != IntType {
+		panic("type error: LE expects int + int")
+	}
+
+	vm.push(vm.alu.LessThanOrEqual(a, b))
 }
 
 func (vm *VM) store(key int) {
-	if len(vm.stack) < 1 {
+	frame := vm.currentFrame()
+	if len(frame.stack) < 1 {
 		panic("not enough operands")
 	}
 
@@ -232,36 +330,59 @@ func (vm *VM) load(key int) {
 func (vm *VM) call() {
 	address := vm.program[vm.pc+1]
 
-	vm.frames = append(vm.frames, Frame{
-		returnPC:  vm.pc + 2,
-		stackBase: len(vm.stack),
+	vm.callStack = append(vm.callStack, Frame{
+		returnPC: vm.pc + 2,
+		locals:   make([]Value, 0),
+		stack:    make([]Value, 0),
 	})
 	// crear nuevo scope
 	vm.scopes = append(vm.scopes, &Scope{
-		vars: make(map[int]int),
+		vars: make(map[int]Value),
 	})
 
 	vm.pc = int(address)
 }
 
 func (vm *VM) ret() {
-	if len(vm.frames) == 0 {
-		panic("no function to return from")
-	}
+	curr := vm.currentFrame()
+	retPC := curr.returnPC
+	vm.callStack = vm.callStack[:len(vm.callStack)-1]
+	vm.pc = retPC
 
-	frame := vm.frames[len(vm.frames)-1]
-	vm.frames = vm.frames[:len(vm.frames)-1]
-
-	vm.stack = vm.stack[:frame.stackBase]
-	vm.pc = frame.returnPC
-	// destruir scope
-	vm.scopes = vm.scopes[:len(vm.scopes)-1]
 }
 
 func (vm *VM) dup() {
-	if len(vm.stack) < 1 {
+	frame := vm.currentFrame()
+	if len(frame.stack) < 1 {
 		panic("stack underflow")
 	}
-	v := vm.stack[len(vm.stack)-1]
-	vm.stack = append(vm.stack, v)
+	v := frame.stack[len(frame.stack)-1]
+	frame.stack = append(frame.stack, v)
+}
+
+func (vm *VM) sysDrawPixel() {
+	b := vm.pop()
+	a := vm.pop()
+	vm.canvas.DrawPixel(a.Int, b.Int)
+}
+
+func (vm *VM) sysPresent() {
+	vm.canvas.Present()
+}
+
+func (vm *VM) print() {
+	frame := vm.currentFrame()
+	if len(frame.stack) == 0 {
+		panic("empty stack")
+	}
+	fmt.Println(frame.stack[len(frame.stack)-1].Int)
+}
+
+func (vm *VM) dump() {
+	frame := vm.currentFrame()
+	cont := frame.stack
+	for len(cont) > 0 {
+		fmt.Println(cont[len(cont)-1].Int)
+		cont = cont[:len(cont)-1]
+	}
 }
