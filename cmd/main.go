@@ -50,6 +50,7 @@ func main() {
 	//programASM := CompileASTtoASM(ast)
 	//fmt.Println("--- Assembly Generado ---")
 	//fmt.Println(programASM)
+
 	data, err := os.ReadFile("examples/program.asm")
 	if err != nil {
 		log.Fatal(err)
@@ -62,5 +63,4 @@ func main() {
 	virtualMachine := vm.NewVM(bytecode)
 	engine := vm.NewEngine()
 	engine.Execute(virtualMachine)
-
 }
